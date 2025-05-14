@@ -49,7 +49,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({'error': 'No data found'})
             
             # Gửi dữ liệu mỗi 3 giây
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
     
     except WebSocketDisconnect:
         print("Client disconnected")
