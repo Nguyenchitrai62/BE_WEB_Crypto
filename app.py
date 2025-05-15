@@ -21,7 +21,7 @@ app = FastAPI()
 
 # API để lấy kết nối WebSocket
 @app.get("/ping")
-async def latest_confidence():
+async def ping():
     return {"message": "Server alive"}
 
 # WebSocket route
