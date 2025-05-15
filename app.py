@@ -20,9 +20,9 @@ collection = db['my_collection']
 app = FastAPI()
 
 # API để lấy kết nối WebSocket
-@app.get("/latest-confidence")
+@app.get("/ping")
 async def latest_confidence():
-    return {"message": "Connect to WebSocket to receive confidence updates every 5 seconds."}
+    return {"message": "Server alive"}
 
 # WebSocket route
 @app.websocket("/ws")
