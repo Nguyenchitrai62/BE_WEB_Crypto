@@ -6,6 +6,7 @@ from pymongo import MongoClient, DESCENDING
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load biến môi trường từ .env
 load_dotenv()
@@ -19,6 +20,14 @@ collection = db['my_collection']
 
 # Tạo FastAPI app
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],    # Cho phép mọi domain gọi API
+    allow_credentials=True,
+    allow_methods=["*"],    # Cho phép mọi phương thức GET, POST,...
+    allow_headers=["*"],    # Cho phép mọi headers
+)
 
 # Endpoint test server
 @app.get("/ping")
