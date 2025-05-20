@@ -65,12 +65,13 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get_recent_confidence(limit: int = Query(100, ge=1, le=1000)):
     """
     Lấy 'limit' confidence gần nhất. Mặc định là 100, tối đa 1000.
+    Bao gồm cả giá close.
     """
     try:
         recent_docs = list(collection.find(
             {},
             sort=[('Date', DESCENDING)],
-            projection={'_id': 0, 'Date': 1, 'confidence': 1}
+            projection={'_id': 0, 'Date': 1, 'confidence': 1, 'Close': 1}  # Thêm close
         ).limit(limit))
 
         for doc in recent_docs:
@@ -79,6 +80,7 @@ async def get_recent_confidence(limit: int = Query(100, ge=1, le=1000)):
         return JSONResponse(content={"data": recent_docs})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 # Để chạy ứng dụng FastAPI
 if __name__ == '__main__':
