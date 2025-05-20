@@ -1,6 +1,7 @@
 import os
 import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+from fastapi.responses import JSONResponse
 from pymongo import MongoClient, DESCENDING
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
@@ -19,44 +20,61 @@ collection = db['my_collection']
 # Tạo FastAPI app
 app = FastAPI()
 
-# API để lấy kết nối WebSocket
+# Endpoint test server
 @app.get("/ping")
 async def ping():
     return {"message": "Server alive"}
 
-# WebSocket route
+# WebSocket stream dữ liệu mới nhất
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()  # Chấp nhận kết nối WebSocket
-    
+    await websocket.accept()
     try:
         while True:
-            # Lấy dữ liệu từ MongoDB (Document với Date mới nhất)
             latest_doc = collection.find_one(
-                {}, sort=[('Date', DESCENDING)],
+                {},
+                sort=[('Date', DESCENDING)],
                 projection={'_id': 0, 'Date': 1, 'confidence': 1}
             )
-            
+
             if latest_doc:
-                # Gửi dữ liệu mới nhất qua WebSocket
                 message = {
                     'date': str(latest_doc['Date']),
                     'confidence': latest_doc['confidence']
                 }
-                await websocket.send_json(message)  # Gửi dữ liệu
+                await websocket.send_json(message)
             else:
-                # Nếu không có dữ liệu, gửi lỗi
                 await websocket.send_json({'error': 'No data found'})
-            
-            # Gửi dữ liệu mỗi 3 giây
+
             await asyncio.sleep(1)
-    
+
     except WebSocketDisconnect:
         print("Client disconnected")
 
-# Để chạy ứng dụng FastAPI, dùng `uvicorn`
+# API để lấy 100 confidence gần nhất
+@app.get("/confidence")
+async def get_recent_confidence(limit: int = Query(100, ge=1, le=1000)):
+    """
+    Lấy 'limit' confidence gần nhất. Mặc định là 100, tối đa 1000.
+    """
+    try:
+        recent_docs = list(collection.find(
+            {},
+            sort=[('Date', DESCENDING)],
+            projection={'_id': 0, 'Date': 1, 'confidence': 1}
+        ).limit(limit))
+
+        for doc in recent_docs:
+            doc['Date'] = str(doc['Date'])
+
+        return JSONResponse(content={"data": recent_docs})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+# Để chạy ứng dụng FastAPI
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    
+
+# Chạy server với:
 # uvicorn app:app --reload
