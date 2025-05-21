@@ -82,8 +82,8 @@ async def startup_event():
 
         # Khởi tạo Telegram App
         await application.initialize()
-        await application.start()
         application.add_handler(CommandHandler("start", start))
+        await application.start()
 
         # Thiết lập Webhook
         await application.bot.set_webhook(url=WEBHOOK_URL)
