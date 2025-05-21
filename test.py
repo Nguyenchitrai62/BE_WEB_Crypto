@@ -78,17 +78,20 @@ async def startup_event():
     try:
         # Kiểm tra kết nối MongoDB
         client.admin.command('ping')
-        print("Kết nối MongoDB thành công!")
+        print("✅ Kết nối MongoDB thành công!")
 
-        # Thêm handler cho lệnh /start
+        # Khởi tạo Telegram App
+        await application.initialize()
+        await application.start()
         application.add_handler(CommandHandler("start", start))
 
         # Thiết lập Webhook
         await application.bot.set_webhook(url=WEBHOOK_URL)
-        print(f"Webhook được thiết lập tại: {WEBHOOK_URL}")
+        print(f"✅ Webhook được thiết lập tại: {WEBHOOK_URL}")
 
     except Exception as e:
-        print(f"Lỗi khi kết nối MongoDB hoặc thiết lập Webhook: {e}")
+        print(f"❌ Lỗi khi khởi tạo bot: {e}")
+
 
 # Hàm shutdown để đóng kết nối MongoDB
 @app.on_event("shutdown")
