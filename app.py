@@ -16,7 +16,7 @@ password = os.getenv("MONGO_PASSWORD")
 uri = f"mongodb+srv://trainguyenchi30:{password}@cryptodata.t2i1je2.mongodb.net/?retryWrites=true&w=majority&appName=CryptoData"
 client = MongoClient(uri, server_api=ServerApi('1'))
 db = client['my_database']
-collection = db['my_collection']
+collection = db['AI_prediction']
 
 # Tạo FastAPI app
 app = FastAPI()
