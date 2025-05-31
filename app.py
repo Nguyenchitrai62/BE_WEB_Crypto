@@ -60,18 +60,26 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected")
 
-# API để lấy 100 confidence gần nhất
+# API để lấy 100 confidence gần nhất kèm OHLC
 @app.get("/confidence")
 async def get_recent_confidence(limit: int = Query(100, ge=1, le=1000)):
     """
     Lấy 'limit' confidence gần nhất. Mặc định là 100, tối đa 1000.
-    Bao gồm cả giá close.
+    Bao gồm cả giá OHLC.
     """
     try:
         recent_docs = list(collection.find(
             {},
             sort=[('Date', DESCENDING)],
-            projection={'_id': 0, 'Date': 1, 'confidence': 1, 'Close': 1}  # Thêm close
+            projection={
+                '_id': 0,
+                'Date': 1,
+                'confidence': 1,
+                'Open': 1,
+                'High': 1,
+                'Low': 1,
+                'Close': 1  # Bao gồm toàn bộ OHLC
+            }
         ).limit(limit))
 
         for doc in recent_docs:
