@@ -42,13 +42,13 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             latest_doc = collection.find_one(
                 {},
-                sort=[('Date', DESCENDING)],
-                projection={'_id': 0, 'Date': 1, 'confidence': 1}
+                sort=[('date', DESCENDING)],
+                projection={'_id': 0, 'date': 1, 'confidence': 1}
             )
 
             if latest_doc:
                 message = {
-                    'date': str(latest_doc['Date']),
+                    'date': str(latest_doc['date']),
                     'confidence': latest_doc['confidence']
                 }
                 await websocket.send_json(message)
@@ -61,7 +61,7 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Client disconnected")
 
 # API để lấy 100 confidence gần nhất kèm OHLC
-@app.get("/confidence")
+@app.get("/signal")
 async def get_recent_confidence(limit: int = Query(100, ge=1, le=1000)):
     """
     Lấy 'limit' confidence gần nhất. Mặc định là 100, tối đa 1000.
@@ -70,20 +70,20 @@ async def get_recent_confidence(limit: int = Query(100, ge=1, le=1000)):
     try:
         recent_docs = list(collection.find(
             {},
-            sort=[('Date', DESCENDING)],
+            sort=[('date', DESCENDING)],
             projection={
                 '_id': 0,
-                'Date': 1,
-                'confidence': 1,
-                'Open': 1,
-                'High': 1,
-                'Low': 1,
-                'Close': 1  # Bao gồm toàn bộ OHLC
+                'date': 1,
+                'signal': 1,
+                'open': 1,
+                'high': 1,
+                'low': 1,
+                'close': 1  
             }
         ).limit(limit))
 
         for doc in recent_docs:
-            doc['Date'] = str(doc['Date'])
+            doc['date'] = str(doc['date'])
 
         return JSONResponse(content={"data": recent_docs})
     except Exception as e:
