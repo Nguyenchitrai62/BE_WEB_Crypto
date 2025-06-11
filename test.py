@@ -1,79 +1,55 @@
-import os
+from fastapi import FastAPI
+import httpx
+import requests
 from dotenv import load_dotenv
-from telegram.ext import Application, CommandHandler
-from telegram import Bot
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
+import os
 
-# Load environment variables from .env file
+# Load biến môi trường từ .env
 load_dotenv()
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 
-# Kết nối MongoDB Atlas
-uri = f"mongodb+srv://trainguyenchi30:{MONGO_PASSWORD}@cryptodata.t2i1je2.mongodb.net/?retryWrites=true&w=majority&appName=CryptoData"
-client = MongoClient(uri, server_api=ServerApi('1'))
-db = client['my_database']
-collection = db['chat_ids']
+app = FastAPI()
 
-async def start(update, context):
-    """Lưu chat_id vào MongoDB và gửi thông báo chào mừng với emoji."""
-    chat_id = update.message.chat_id
-    # Kiểm tra xem chat_id đã tồn tại chưa
-    if not collection.find_one({"chat_id": chat_id}):
-        collection.insert_one({"chat_id": chat_id})
-        await update.message.reply_text(
-            "🎉 Chào mừng bạn đến với bot dự đoán giá! 📈\n"
-            "Bạn sẽ nhận thông báo ngay khi model AI của chúng tôi phát hiện giá tăng 📈 hoặc giảm 📉 với độ tin cậy cao! 🚀\n"
-            "Hãy chờ tin từ chúng tôi nhé! 😊"
-        )
+# Lấy webhook từ biến môi trường
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+
+# Gửi cảnh báo đến Discord
+def send_discord_alert(confidence: int):
+    if not DISCORD_WEBHOOK_URL:
+        return False
+
+    if confidence == 1:
+        content = "📈 **Tín hiệu TĂNG** từ hệ thống AI!"
+    elif confidence == 0:
+        content = "📉 **Tín hiệu GIẢM** từ hệ thống AI!"
     else:
-        await update.message.reply_text(
-            "🎉 Bạn đã đăng ký rồi! 📈\n"
-            "Sẵn sàng nhận thông báo khi giá tăng 📈 hoặc giảm 📉 với độ tin cậy cao! 🚀"
-        )
+        return False  # Không gửi nếu không phải 0 hoặc 1
 
-async def broadcast_price_increase():
-    """Gửi tin nhắn đến tất cả chat_id trong MongoDB khi giá được dự đoán tăng."""
-    bot = Bot(token=TELEGRAM_TOKEN)
-    message = "⚠️ Cảnh báo: Model AI dự đoán giá sẽ tăng! 📈"
-    cursor = collection.find({}, {"chat_id": 1})
-    for doc in cursor:
-        try:
-            await bot.send_message(chat_id=doc["chat_id"], text=message)
-        except Exception as e:
-            print(f"Không thể gửi tin nhắn đến {doc['chat_id']}: {e}")
+    message = {"content": content}
+    response = requests.post(DISCORD_WEBHOOK_URL, json=message)
+    return response.status_code == 204
 
-def check_price_prediction():
-    """Hàm giả lập kiểm tra dự đoán giá từ model AI."""
-    # Thay bằng code gọi model AI của bạn
-    # Ví dụ: model.predict() trả về True nếu giá tăng
-    return True  # Giả lập dự đoán giá tăng
+@app.get("/ping")
+async def ping():
+    url = "https://api.nguyenchitrai.id.vn/confidence?limit=1"
 
-def main():
-    """Chạy bot và kiểm tra dự đoán giá."""
     try:
-        # Kiểm tra kết nối MongoDB
-        client.admin.command('ping')
-        print("Kết nối MongoDB thành công!")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
 
-        # Khởi tạo bot
-        application = Application.builder().token(TELEGRAM_TOKEN).build()
+        latest = data.get("data", [])[0]
+        confidence = latest.get("confidence")
 
-        # Thêm handler cho lệnh /start
-        application.add_handler(CommandHandler("start", start))
-
-        # Bắt đầu bot
-        application.run_polling()
-
-        # Kiểm tra dự đoán giá (giả lập, thay bằng logic của bạn)
-        if check_price_prediction():
-            application.run_async(broadcast_price_increase())
+        if confidence in [0, 1]:
+            sent = send_discord_alert(confidence)
+            return {
+                "message": f"Alert sent to Discord. (confidence = {confidence})" if sent else "Failed to send alert."
+            }
+        else:
+            return {"message": f"Không gửi alert. Confidence = {confidence}"}
 
     except Exception as e:
-        print(f"Lỗi khi kết nối MongoDB hoặc chạy bot: {e}")
-    finally:
-        client.close()  # Đóng kết nối MongoDB khi bot dừng
+        return {"error": str(e)}
 
-if __name__ == "__main__":
-    main()
+# uvicorn test:app --reload
