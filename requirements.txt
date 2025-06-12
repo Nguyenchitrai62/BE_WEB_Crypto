@@ -3,3 +3,4 @@ uvicorn[standard]==0.18.2
 httpx==0.24.1
 requests==2.31.0
 python-dotenv==0.21.0
+pymongo==4.3.3
