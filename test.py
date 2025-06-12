@@ -13,14 +13,14 @@ app = FastAPI()
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 # Gửi cảnh báo đến Discord
-def send_discord_alert(confidence: int):
+def send_discord_alert(symbol: str, confidence: int):
     if not DISCORD_WEBHOOK_URL:
         return False
 
     if confidence == 1:
-        content = "📈 **Tín hiệu TĂNG** từ hệ thống AI!"
+        content = f"📈 **Tín hiệu TĂNG** cho {symbol} từ hệ thống AI!"
     elif confidence == 0:
-        content = "📉 **Tín hiệu GIẢM** từ hệ thống AI!"
+        content = f"📉 **Tín hiệu GIẢM** cho {symbol} từ hệ thống AI!"
     else:
         return False  # Không gửi nếu không phải 0 hoặc 1
 
@@ -30,24 +30,28 @@ def send_discord_alert(confidence: int):
 
 @app.get("/ping")
 async def ping():
-    url = "https://api.nguyenchitrai.id.vn/confidence?limit=1"
+    base_url = "https://api.nguyenchitrai.id.vn/confidence?limit=1&symbol="
+    symbols = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT"]
+    results = {}
 
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            response.raise_for_status()
-            data = response.json()
+            for symbol in symbols:
+                url = base_url + symbol
+                response = await client.get(url)
+                response.raise_for_status()
+                data = response.json()
 
-        latest = data.get("data", [])[0]
-        confidence = latest.get("confidence")
+                latest = data.get("data", [])[0]
+                confidence = latest.get("confidence")
 
-        if confidence in [0, 1]:
-            sent = send_discord_alert(confidence)
-            return {
-                "message": f"Alert sent to Discord. (confidence = {confidence})" if sent else "Failed to send alert."
-            }
-        else:
-            return {"message": f"Không gửi alert. Confidence = {confidence}"}
+                if confidence in [0, 1]:
+                    sent = send_discord_alert(symbol, confidence)
+                    results[symbol] = f"Sent alert (confidence = {confidence})" if sent else "Failed to send alert"
+                else:
+                    results[symbol] = f"Không gửi alert. Confidence = {confidence}"
+
+        return results
 
     except Exception as e:
         return {"error": str(e)}
