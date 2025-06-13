@@ -82,7 +82,8 @@ async def get_recent_confidence(
                 'High': 1,
                 'Low': 1,
                 'Close': 1,
-                'symbol': 1
+                'symbol': 1,  
+                'predicted_target': 1
             }
         ).limit(limit))
 
