@@ -49,6 +49,7 @@ uvicorn app:app --reload --port 8000
 uvicorn noti:app --reload --port 8001
 
 ## 🧩 Các thành phần khác của dự án
+```
 
 - ⚙️ **BE Worker – Xử lý tín hiệu & AI dự đoán (rule-based + LSTM)**  
   👉 [https://github.com/Nguyenchitrai62/BE_Worker](https://github.com/Nguyenchitrai62/BE_Worker)
