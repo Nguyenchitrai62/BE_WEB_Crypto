@@ -7,12 +7,7 @@
 ## 📌 Thành phần chính
 
 ### `app.py` – 📡 API Service
-
----
-
 ### `noti.py` – 🔔 Notification API
-
----
 
 ## 🧪 Công nghệ sử dụng
 
@@ -50,6 +45,8 @@ uvicorn noti:app --reload --port 8001
 
 ## 🧩 Các thành phần khác của dự án
 ```
+
+---
 
 - ⚙️ **BE Worker – Xử lý tín hiệu & AI dự đoán (rule-based + LSTM)**  
   👉 [https://github.com/Nguyenchitrai62/BE_Worker](https://github.com/Nguyenchitrai62/BE_Worker)
