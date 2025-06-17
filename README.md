@@ -9,6 +9,8 @@
 ### `app.py` – 📡 API Service
 ### `noti.py` – 🔔 Notification API
 
+---
+
 ## 🧪 Công nghệ sử dụng
 
 - **FastAPI** – framework API nhẹ, hiệu suất cao
